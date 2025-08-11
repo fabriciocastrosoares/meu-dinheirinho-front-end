@@ -1,5 +1,5 @@
 import { createGlobalStyle } from "styled-components";
-
+import "@fontsource/raleway";
 const GlobalStyle = createGlobalStyle`
     * {
         font-family: "Raleway", sans-serif;

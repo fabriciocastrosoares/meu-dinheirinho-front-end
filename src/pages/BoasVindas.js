@@ -6,20 +6,24 @@ import { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import apiTransacoes from '../services/apiTransacoes';
 import apiAuth from '../services/apiAuth';
+import { useExpulsar } from '../hooks/useExpulsar';
+
 
 export default function BoasVindas() {
   const navigate = useNavigate();
   const [operacoes, setOperacoes] = useState([]);
-  const { usuarioContexto, setUsuarioContexto } = useContext(UserContext);
+  const { nome, setNome } = useContext(UserContext);
+  const { token, setToken } = useContext(UserContext);
   const [saldo, setSaldo] = useState(0);
 
-
+  useExpulsar();
 
   function sair() {
-
-    apiAuth.logout(usuarioContexto.token)
+    apiAuth.logout(token)
       .then(() => {
-        setUsuarioContexto(null);
+        setNome(undefined);
+        setToken(undefined);
+        localStorage.clear();
         navigate("/");
       })
       .catch(err => {
@@ -28,13 +32,13 @@ export default function BoasVindas() {
 
   };
 
-useEffect(() => {
-  if (!usuarioContexto?.token) return;
-  carregarTrasacoesLista();
-}, [usuarioContexto?.token]);
+  useEffect(() => {
+    if (!token || !nome) navigate("/");
+    carregarTrasacoesLista();
+  }, []);
 
   function carregarTrasacoesLista() {
-    apiTransacoes.carregarTrasacoes(usuarioContexto.token)
+    apiTransacoes.carregarTrasacoes(token)
       .then(res => {
         const apiTransacoes = res.data;
         setOperacoes(apiTransacoes);
@@ -43,6 +47,20 @@ useEffect(() => {
         alert(err.response.data);
       })
 
+  };
+
+  function apagarTransacao(id) {
+    const confirmar = window.confirm("Tem certeza que deseja apagar essa transação?");
+
+    if (confirmar) {
+      apiTransacoes.apagarTransacoes(token, id)
+        .then(res => {
+          carregarTrasacoesLista();
+        })
+        .catch(err => {
+          alert(err.response.data);
+        })
+    }
   };
 
   useEffect(exibeSaldo, [operacoes]);
@@ -60,13 +78,11 @@ useEffect(() => {
     setSaldo(total)
   };
 
- if (!usuarioContexto || !usuarioContexto.token) return null;
-
   return (
 
     <TelaBoasVindas>
       <UsuarioTopo>
-        <h1>Olá, {usuarioContexto.nome} </h1>
+        <h1>Olá, {nome} </h1>
         <ExitIcon onClick={sair} />
       </UsuarioTopo>
 
@@ -77,11 +93,13 @@ useEffect(() => {
               <RegistroTransacoes key={t._id}>
                 <div>
                   <span>{t.data}</span>
-                  <strong>{t.descricao}</strong>
+                    <strong onClick={()=> (navigate(`/editar-operacao/${t.tipo}`, {state: t}))}>{t.descricao}</strong>
                 </div>
                 <Value color={t.tipo === "entrada" ? "positivo" : "negativo"}>
                   {parseFloat(t.valor).toFixed(2).replace(".", ",")}
+                  <p onClick={() => apagarTransacao(t._id)}>X</p>
                 </Value>
+
               </RegistroTransacoes>
             ))}
           </ListaTransacoes>
@@ -99,15 +117,14 @@ useEffect(() => {
         </TransacoesContainerVazio>
       )}
 
-
       <AdicionarTransacoes>
         <Link to="/operacoes/entrada">
           <AiOutlinePlusCircle />
-          <p>Nova <br /> entrada</p>
+          <p>Nova <br /> Entrada</p>
         </Link>
         <Link to="/operacoes/saida">
           <AiOutlineMinusCircle />
-          <p>Nova <br /> saída</p>
+          <p>Nova <br /> Saída</p>
         </Link>
       </AdicionarTransacoes>
     </TelaBoasVindas >
@@ -188,6 +205,7 @@ const AdicionarTransacoes = styled.section`
   box-sizing: border-box;
 
   a {
+    font-family: "Raleway", sans-serif;
     text-decoration: none;
     width: 100%;
     height: 114px;
@@ -219,12 +237,23 @@ const AdicionarTransacoes = styled.section`
 `;
 
 const Value = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Raleway", sans-serif;
   font-size: 16px;
   text-align: right;
   color: ${(props) => (props.color === "positivo" ? "green" : "red")};
+     p {
+    font-weight: 400;
+    color: #C6C6C6;
+    margin-left: 11px;
+    cursor: pointer;
+  }
 `;
 
 const RegistroTransacoes = styled.li`
+  font-family: "Raleway", sans-serif;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -235,11 +264,12 @@ const RegistroTransacoes = styled.li`
   margin-top: 23px;
  
   div span {
+    font-family: "Raleway", sans-serif;
     color: #c6c6c6;
     margin-right: 10px;
-  }
+  } 
+ 
 `;
-
 
 const TransacoesContainerVazio = styled.article`
   width: calc(100vw - 48px);
@@ -264,10 +294,14 @@ const TransacoesContainerVazio = styled.article`
   }
 `;
 
-
 const ListaTransacoes = styled.div`
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none;
+    ::-webkit-scrollbar{
+    width: 0px;
+    background: transparent;
+  }
   padding: 16px 10px 0 10px;
 `;
 

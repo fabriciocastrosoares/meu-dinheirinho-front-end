@@ -4,21 +4,26 @@ import styled from "styled-components";
 import MinhaCarteira from "../components/MinhaCarteiraLogo";
 import apiAuth from "../services/apiAuth";
 import { UserContext } from "../contexts/UserContext";
+import { useContinuarLogado } from "../hooks/useContinuarLogado";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
-    const { setUsuarioContexto } = useContext(UserContext);
+    const { setNome, setToken } = useContext(UserContext);
     const navigate = useNavigate();
-   
+
+    useContinuarLogado();
+
     function fazerLogin(event) {
         event.preventDefault();
         const body = { email, senha };
 
         apiAuth.login(body)
             .then(res => {
-                const {usuario, token} = res.data;
-                setUsuarioContexto({...usuario, token});
+                setNome(res.data.usuario.nome);
+                setToken(res.data.token);
+                localStorage.setItem("token", res.data.token);
+                localStorage.setItem("nome", res.data.usuario.nome);
                 navigate("/boas-vindas");
             })
             .catch(err => {
@@ -34,6 +39,7 @@ export default function Login() {
                 <input
                     placeholder="E-mail"
                     type="email"
+                    autoComplete="username"
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
@@ -41,7 +47,9 @@ export default function Login() {
                 <input
                     placeholder="Senha"
                     type="password"
+                    autoComplete="new-password"
                     required
+                    minLength={3}
                     value={senha}
                     onChange={e => setSenha(e.target.value)}
                 />

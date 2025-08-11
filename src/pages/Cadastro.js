@@ -3,23 +3,21 @@ import styled from "styled-components";
 import MinhaCarteira from "../components/MinhaCarteiraLogo";
 import { useState } from "react";
 import apiAuth from "../services/apiAuth";
-
+import { useContinuarLogado } from "../hooks/useContinuarLogado";
 
 export default function Cadastro() {
     const [nome, setNome] = useState("");
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmarSenha, setConfirmarSenha] = useState("");
-
     const navigate = useNavigate();
+
+    useContinuarLogado();
 
     function fazerCadastro(event) {
         event.preventDefault();
 
-        if(senha !== confirmarSenha){
-            alert("As senhas devem ser iguais!");
-            return;
-        };
+        if (senha !== confirmarSenha) return alert("As senhas devem ser iguais!");
 
         const body = { nome, email, senha };
 
@@ -47,21 +45,26 @@ export default function Cadastro() {
                 <input
                     placeholder="E-mail"
                     type="email"
+                    autoComplete="username"
                     required
-                    value={email} 
+                    value={email}
                     onChange={e => setEmail(e.target.value)}
                 />
                 <input
                     placeholder="Senha"
                     type="password"
+                    autoComplete="new-password"
                     required
+                    minLength={3}
                     value={senha}
                     onChange={e => setSenha(e.target.value)}
                 />
                 <input
                     placeholder="Confirme a senha"
                     type="password"
+                    autoComplete="new-password"
                     required
+                    minLength={3}
                     value={confirmarSenha}
                     onChange={e => setConfirmarSenha(e.target.value)}
                 />

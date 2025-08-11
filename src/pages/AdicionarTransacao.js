@@ -3,13 +3,17 @@ import styled from "styled-components";
 import apiTransacoes from "../services/apiTransacoes";
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate, useParams } from "react-router-dom";
+import { useExpulsar } from "../hooks/useExpulsar";
 
-export default function Trasacoes() {
+export default function Transacoes() {
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
-  const { usuarioContexto } = useContext(UserContext);
-  const {tipo} = useParams();
+  const { token } = useContext(UserContext);
+  const { tipo } = useParams();
   const navigate = useNavigate();
+  const tipoTexto = tipo === "entrada" ? "Entrada" : "Saída";
+
+  useExpulsar();
 
   function salvarOperacao(event) {
     event.preventDefault();
@@ -20,19 +24,19 @@ export default function Trasacoes() {
     };
 
     const body = { valor: novoValor, descricao, tipo };
-   
-    apiTransacoes.adicionarTransacoes(usuarioContexto.token, body)
+
+    apiTransacoes.adicionarTransacoes(token, body)
       .then(res => {
         navigate("/boas-vindas");
       })
       .catch(err => {
-          alert(err.response.data);
+        alert(err.response.data);
       })
   };
 
   return (
     <TelaNovaTransacao>
-      <h1>Nova {tipo}</h1>
+      <h1>Nova {tipoTexto}</h1>
 
       <form onSubmit={salvarOperacao}>
         <input
@@ -49,7 +53,7 @@ export default function Trasacoes() {
           value={descricao}
           onChange={e => setDescricao(e.target.value)}
         />
-        <button type="submit">Salvar {tipo}</button>
+        <button type="submit">Salvar {tipoTexto}</button>
       </form>
     </TelaNovaTransacao>
   );
